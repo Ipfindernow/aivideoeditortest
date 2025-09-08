@@ -6,8 +6,7 @@ import librosa
 def extract_audio(video_path, out_wav):
     subprocess.check_call(
         ['ffmpeg','-y','-i',video_path,'-vn','-acodec','pcm_s16le','-ar','44100','-ac','1',out_wav],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
     )
 
 def compute_energy(wav_path, hop_length=1024, frame_length=2048):
