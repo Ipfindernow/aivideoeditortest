@@ -7,7 +7,8 @@ namespace AutoVideoEditor.Controllers
     [Route("api/[controller]")]
     public class VideoUploadController : ControllerBase
     {
-        private readonly string _storagePath = @"D:\VideoClips\"; // Change to your large storage drive
+        // Permanent storage folder
+        private readonly string _storagePath = @"D:\VideoClips\"; // CHANGE THIS TO YOUR DRIVE
 
         [HttpPost("upload")]
         public async Task<IActionResult> UploadVideos([FromForm] List<IFormFile> clips)
@@ -22,21 +23,27 @@ namespace AutoVideoEditor.Controllers
             {
                 if (clip.Length > 0)
                 {
-                    var filePath = Path.Combine(_storagePath, clip.FileName);
-                    using (var stream = new FileStream(filePath, FileMode.Create))
-                        await clip.CopyToAsync(stream);
+                    var fileName = Path.GetFileName(clip.FileName); // safe name
+                    var filePath = Path.Combine(_storagePath, fileName);
 
-                    savedFiles.Add(filePath);
+                    // Save file permanently
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await clip.CopyToAsync(stream);
+                    }
+
+                    savedFiles.Add(fileName); // just the name for frontend
                 }
             }
 
-            var pythonResult = AnalyzeClips(savedFiles);
+            // Optional: call Python analysis
+            var analysis = AnalyzeClips(savedFiles.Select(f => Path.Combine(_storagePath, f)).ToList());
 
             return Ok(new
             {
                 message = "Videos uploaded successfully",
-                files = savedFiles.Select(f => Path.GetFileName(f)).ToList(),
-                analysis = pythonResult
+                files = savedFiles,
+                analysis
             });
         }
 
@@ -48,7 +55,7 @@ namespace AutoVideoEditor.Controllers
 
                 var psi = new ProcessStartInfo
                 {
-                    FileName = "python3",
+                    FileName = "python3", // or "python"
                     Arguments = $"analyze_clips.py {args}",
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
