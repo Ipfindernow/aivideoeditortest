@@ -4,20 +4,17 @@
 <meta charset="UTF-8">
 <title>Auto Video Editor</title>
 <style>
-body { font-family: Arial, sans-serif; margin: 20px; }
-h1 { font-size: 24px; margin-bottom: 10px; }
-.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-video { width: 100%; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
-button { padding: 10px 20px; border: none; border-radius: 8px; background: #2563eb; color: white; cursor: pointer; }
-button:disabled { background: gray; cursor: not-allowed; }
-pre { background: #f3f3f3; padding: 10px; border-radius: 6px; max-height: 300px; overflow-y: auto; }
+body { font-family: Arial; margin:20px; }
+.grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:15px; }
+video { width:100%; border-radius:8px; }
+button { padding:10px 20px; background:#2563eb; color:white; border:none; border-radius:8px; cursor:pointer; }
+button:disabled { background:gray; cursor:not-allowed; }
+pre { background:#f3f3f3; padding:10px; border-radius:6px; max-height:300px; overflow-y:auto; }
 </style>
 </head>
 <body>
 
 <h1>Auto Video Editor</h1>
-<p>Upload 4+ clips. Backend saves videos and detects climax intervals.</p>
-
 <input type="file" id="fileInput" multiple accept="video/*"><br><br>
 <div id="preview" class="grid"></div>
 <button id="analyzeBtn">Upload & Analyze</button>
@@ -30,8 +27,7 @@ const analyzeBtn = document.getElementById('analyzeBtn');
 const resultsDiv = document.getElementById('results');
 let files = [];
 
-// Show local preview
-fileInput.addEventListener('change', (e) => {
+fileInput.addEventListener('change', e => {
     files = Array.from(e.target.files);
     previewDiv.innerHTML = '';
     files.forEach(f => {
@@ -43,7 +39,6 @@ fileInput.addEventListener('change', (e) => {
     });
 });
 
-// Upload & show saved videos + analysis
 analyzeBtn.addEventListener('click', async () => {
     if (files.length < 4) { alert("Upload at least 4 clips."); return; }
 
@@ -56,7 +51,7 @@ analyzeBtn.addEventListener('click', async () => {
         if(!res.ok) throw new Error(await res.text());
         const json = await res.json();
 
-        resultsDiv.innerHTML = `<h2>Results</h2><pre>${JSON.stringify(json, null, 2)}</pre>`;
+        resultsDiv.innerHTML = `<h2>Results</h2><pre>${JSON.stringify(json,null,2)}</pre>`;
 
         // Show saved videos from backend
         previewDiv.innerHTML = '';
@@ -67,7 +62,7 @@ analyzeBtn.addEventListener('click', async () => {
             previewDiv.appendChild(video);
         });
 
-    } catch (err) { alert("Error: " + err.message); }
+    } catch(err) { alert("Error: "+err.message); }
     finally { analyzeBtn.disabled=false; analyzeBtn.textContent="Upload & Analyze"; }
 });
 </script>
