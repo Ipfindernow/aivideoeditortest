@@ -7,28 +7,39 @@ namespace AutoVideoEditor.Controllers
     [Route("api/[controller]")]
     public class VideoUploadController : ControllerBase
     {
-        private readonly string _storagePath = @"D:\VideoClips\"; // Change to your storage drive
+        private readonly string _storagePath = @"D:\VideoClips\"; // Permanent storage for editing
 
         [HttpPost("upload")]
         public async Task<IActionResult> UploadVideos([FromForm] List<IFormFile> clips)
         {
-            if (clips==null || clips.Count<4)
-                return BadRequest($"Upload at least 4 clips. Sent: {clips?.Count ?? 0}");
+            if (clips == null || clips.Count < 4)
+                return BadRequest($"Please upload at least 4 clips. You sent {clips?.Count ?? 0}.");
 
-            Directory.CreateDirectory(_storagePath);
+            Directory.CreateDirectory(_storagePath); // ensure folder exists
             var savedFiles = new List<string>();
 
-            foreach(var clip in clips)
+            foreach (var clip in clips)
             {
-                var fileName = Path.GetFileName(clip.FileName);
-                var path = Path.Combine(_storagePath, fileName);
-                using(var stream = new FileStream(path, FileMode.Create))
-                    await clip.CopyToAsync(stream);
-                savedFiles.Add(fileName);
+                var fileName = Path.GetFileName(clip.FileName); // safe filename
+                var filePath = Path.Combine(_storagePath, fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await clip.CopyToAsync(stream); // permanently save
+                }
+
+                savedFiles.Add(filePath); // full path for editing process
             }
 
-            var analysis = AnalyzeClips(savedFiles.Select(f=>Path.Combine(_storagePath,f)).ToList());
-            return Ok(new { message="Uploaded", files=savedFiles, analysis });
+            // Do not delete files after analysis; Python will read these saved files
+            var analysis = AnalyzeClips(savedFiles);
+
+            return Ok(new
+            {
+                message = "Videos uploaded and saved permanently.",
+                files = savedFiles.Select(f => System.IO.Path.GetFileName(f)).ToList(),
+                analysis
+            });
         }
 
         private object AnalyzeClips(List<string> files)
@@ -52,6 +63,7 @@ namespace AutoVideoEditor.Controllers
                 process.WaitForExit();
 
                 if (process.ExitCode != 0) return new { error };
+
                 return Newtonsoft.Json.JsonConvert.DeserializeObject(result);
             }
             catch (Exception ex)
