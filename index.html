@@ -1,78 +1,90 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Auto Video Editor</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    h1 { font-size: 24px; margin-bottom: 10px; }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-    video { width: 100%; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
-    button { padding: 10px 20px; border: none; border-radius: 8px; background: #2563eb; color: white; cursor: pointer; }
-    button:disabled { background: gray; cursor: not-allowed; }
-    pre { background: #f3f3f3; padding: 10px; border-radius: 6px; max-height: 300px; overflow-y: auto; }
-  </style>
+<meta charset="UTF-8">
+<title>Auto Video Editor</title>
+<style>
+body { font-family: Arial, sans-serif; margin: 20px; }
+h1 { font-size: 24px; margin-bottom: 10px; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+video { width: 100%; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
+button { padding: 10px 20px; border: none; border-radius: 8px; background: #2563eb; color: white; cursor: pointer; }
+button:disabled { background: gray; cursor: not-allowed; }
+pre { background: #f3f3f3; padding: 10px; border-radius: 6px; max-height: 300px; overflow-y: auto; }
+</style>
 </head>
 <body>
-  <h1>Auto Video Editor</h1>
-  <p>Upload 4 or more clips. Backend will detect shots and climax intervals.</p>
 
-  <input type="file" id="fileInput" multiple accept="video/*"><br><br>
+<h1>Auto Video Editor</h1>
+<p>Upload 4 or more clips. Backend will save them and detect climax intervals.</p>
 
-  <div id="preview" class="grid"></div>
+<input type="file" id="fileInput" multiple accept="video/*"><br><br>
 
-  <button id="analyzeBtn">Upload & Analyze</button>
+<div id="preview" class="grid"></div>
+<button id="analyzeBtn">Upload & Analyze</button>
 
-  <div id="results"></div>
+<div id="results"></div>
 
-  <script>
-    const fileInput = document.getElementById('fileInput');
-    const previewDiv = document.getElementById('preview');
-    const analyzeBtn = document.getElementById('analyzeBtn');
-    const resultsDiv = document.getElementById('results');
-    let files = [];
+<script>
+const fileInput = document.getElementById('fileInput');
+const previewDiv = document.getElementById('preview');
+const analyzeBtn = document.getElementById('analyzeBtn');
+const resultsDiv = document.getElementById('results');
+let files = [];
 
-    fileInput.addEventListener('change', (e) => {
-      files = Array.from(e.target.files);
-      previewDiv.innerHTML = '';
-      files.forEach(f => {
+fileInput.addEventListener('change', (e) => {
+    files = Array.from(e.target.files);
+    previewDiv.innerHTML = '';
+    files.forEach(f => {
         const url = URL.createObjectURL(f);
         const video = document.createElement('video');
         video.src = url;
         video.controls = true;
         previewDiv.appendChild(video);
-      });
     });
+});
 
-    analyzeBtn.addEventListener('click', async () => {
-      if (files.length < 4) {
+analyzeBtn.addEventListener('click', async () => {
+    if (files.length < 4) {
         alert("Please upload at least 4 clips (you uploaded " + files.length + ")");
         return;
-      }
+    }
 
-      analyzeBtn.disabled = true;
-      analyzeBtn.textContent = "Uploading & Analyzing...";
+    analyzeBtn.disabled = true;
+    analyzeBtn.textContent = "Uploading & Analyzing...";
 
-      const fd = new FormData();
-      files.forEach(f => fd.append('clips', f));
+    const fd = new FormData();
+    files.forEach(f => fd.append('clips', f));
 
-      try {
-        const res = await fetch('https://localhost:5001/api/VideoUpload/upload', { method: 'POST', body: fd });
+    try {
+        const res = await fetch('https://localhost:5001/api/VideoUpload/upload', {
+            method: 'POST',
+            body: fd
+        });
         if (!res.ok) throw new Error(await res.text());
         const json = await res.json();
 
-        resultsDiv.innerHTML = `
-          <h2>Analysis Results</h2>
-          <p>Saved files and detected climax intervals:</p>
-          <pre>${JSON.stringify(json, null, 2)}</pre>
-        `;
-      } catch (err) {
+        resultsDiv.innerHTML = `<h2>Analysis Results</h2>
+<p>Saved files and detected climax intervals:</p>
+<pre>${JSON.stringify(json, null, 2)}</pre>`;
+
+        // Show saved videos from backend
+        previewDiv.innerHTML = '';
+        json.files.forEach(f => {
+            const video = document.createElement('video');
+            video.src = `/VideoClips/${f}`; // ensure static files served if you want live preview
+            video.controls = true;
+            previewDiv.appendChild(video);
+        });
+
+    } catch (err) {
         alert("Upload/Analysis failed: " + err.message);
-      } finally {
+    } finally {
         analyzeBtn.disabled = false;
         analyzeBtn.textContent = "Upload & Analyze";
-      }
-    });
-  </script>
+    }
+});
+</script>
+
 </body>
 </html>
