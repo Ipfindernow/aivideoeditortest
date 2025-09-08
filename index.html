@@ -21,7 +21,7 @@
 
   <div id="preview" class="grid"></div>
 
-  <button id="analyzeBtn">Analyze Clips</button>
+  <button id="analyzeBtn">Upload & Analyze</button>
 
   <div id="results"></div>
 
@@ -51,26 +51,26 @@
       }
 
       analyzeBtn.disabled = true;
-      analyzeBtn.textContent = "Analyzing...";
+      analyzeBtn.textContent = "Uploading & Analyzing...";
 
       const fd = new FormData();
       files.forEach(f => fd.append('clips', f));
 
       try {
-        const res = await fetch('/api/analyze', { method: 'POST', body: fd });
+        const res = await fetch('https://localhost:5001/api/VideoUpload/upload', { method: 'POST', body: fd });
         if (!res.ok) throw new Error(await res.text());
         const json = await res.json();
 
         resultsDiv.innerHTML = `
           <h2>Analysis Results</h2>
-          <p>Detected shots and suggested climax intervals:</p>
+          <p>Saved files and detected climax intervals:</p>
           <pre>${JSON.stringify(json, null, 2)}</pre>
         `;
       } catch (err) {
-        alert("Analysis failed: " + err.message);
+        alert("Upload/Analysis failed: " + err.message);
       } finally {
         analyzeBtn.disabled = false;
-        analyzeBtn.textContent = "Analyze Clips";
+        analyzeBtn.textContent = "Upload & Analyze";
       }
     });
   </script>
